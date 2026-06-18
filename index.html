@@ -188,6 +188,7 @@
     .save-cta:hover { background: var(--purple-mid); }
     .form-note { text-align: center; font-size: 12px; color: var(--muted); margin-top: 14px; }
     .form-note a { color: var(--purple-mid); text-decoration: none; }
+    .save-next-pill { display: block; margin: 18px auto 0; background: var(--teal); color: var(--purple); border: none; border-radius: 50px; padding: 12px 28px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; }
     .success-state { display: none; text-align: center; }
     .success-state.show { display: block; }
     .success-icon { font-size: 48px; margin-bottom: 14px; }
@@ -497,7 +498,7 @@
         <div class="adv-list-label">What will be saved</div>
         <div class="adv-list" id="advList"></div>
       </div>
-      <div class="account-form">
+      <div class="account-form" style="display:flex;flex-direction:column;">
         <div id="saveForm">
           <div class="form-logo">
             <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" stroke="#7639A1" stroke-width="2.5"/><circle cx="16" cy="16" r="7" stroke="#7639A1" stroke-width="2.5"/><circle cx="16" cy="16" r="2" fill="#7639A1"/></svg>
@@ -516,6 +517,7 @@
           <button class="save-cta" id="saveCtaBtn" onclick="handleSave()">Save my progress →</button>
           <div class="form-note">Already have an account? <a href="#" onclick="return false;">Sign in</a></div>
         </div>
+        <button class="save-next-pill" onclick="go('a2q1')">Next up: Outlook</button>
         <div class="success-state" id="successState">
           <div class="success-icon">🎉</div>
           <h3>Progress saved!</h3>
