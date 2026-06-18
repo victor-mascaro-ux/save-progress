@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Save Progress — Knomee</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --purple:      #240446;
+      --purple-mid:  #7639A1;
+      --purple-light:#e9d9f4;
+      --teal:        #3dbdaa;
+      --teal-bg:     #b8ede6;
+      --lavender-bg: #d8cce8;
+      --border:      #e2e2e2;
+      --text:        #1a1a2e;
+      --muted:       #6b7280;
+    }
+    html, body { height: 100%; font-family: 'Poppins', sans-serif; background: white; color: var(--text); }
+
+    /* ── Shell ── */
+    .shell { display: flex; flex-direction: column; height: 100vh; }
+
+    /* ── Header ── */
+    .header {
+      background: var(--purple); height: 52px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+      position: relative;
+    }
+    .header-title { color: white; font-size: 16px; font-weight: 600; }
+    .header-x { background: none; border: none; color: white; font-size: 22px; cursor: pointer; line-height: 1; padding: 4px 8px; }
+    /* thin purple progress accent line */
+    .header::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: var(--purple-mid); opacity: 0.5; }
+
+    /* ── Adventure tabs ── */
+    .adv-bar {
+      border-bottom: 1px solid var(--border); display: flex; align-items: center;
+      padding: 0 24px; gap: 0; flex-shrink: 0; background: white; height: 42px;
+    }
+    .adv-tab {
+      display: flex; align-items: center; gap: 6px; padding: 0 16px; height: 100%;
+      font-size: 12px; font-weight: 600; color: var(--muted);
+      border-bottom: 2.5px solid transparent; white-space: nowrap;
+    }
+    .adv-tab.active { color: var(--purple); border-bottom-color: var(--purple); }
+    .adv-tab.done { color: var(--teal); border-bottom-color: var(--teal); }
+    .adv-dot { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; background: var(--border); color: var(--muted); flex-shrink: 0; }
+    .adv-tab.active .adv-dot { background: var(--purple); color: white; }
+    .adv-tab.done .adv-dot { background: var(--teal); color: white; }
+
+    /* ── Two-column adventure layout ── */
+    .adv-body { flex: 1; display: none; overflow: hidden; }
+    .adv-body.active { display: flex; }
+
+    .adv-left {
+      width: 52%; padding: 40px 48px 24px 48px;
+      display: flex; flex-direction: column; overflow-y: auto;
+      position: relative;
+    }
+    .adv-right {
+      width: 48%; position: relative; overflow: hidden; flex-shrink: 0;
+    }
+    .adv-right-circle {
+      position: absolute; right: -80px; top: 50%; transform: translateY(-50%);
+      width: 520px; height: 520px; border-radius: 50%;
+    }
+    .adv-right-photo {
+      position: absolute; bottom: 0; right: 0; width: 100%; height: 100%;
+      object-fit: cover; mix-blend-mode: multiply;
+    }
+
+    /* knomee logo inside adventure */
+    .adv-logo { display: flex; align-items: center; gap: 8px; margin-bottom: 36px; }
+    .adv-logo svg { width: 22px; height: 22px; }
+    .adv-logo-text { font-size: 15px; font-weight: 700; color: var(--purple); }
+
+    /* question */
+    .q-num { font-size: 14px; font-weight: 700; color: var(--teal); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .q-num-arrow { font-size: 14px; }
+    .q-title { font-size: 22px; font-weight: 700; color: var(--purple); line-height: 1.35; margin-bottom: 8px; }
+    .q-sub { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+    .q-constraint { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+
+    /* Pill choices (Financial Joy Q1 style) */
+    .pill-choices { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+    .pill {
+      display: inline-flex; align-items: center;
+      border: 1.5px solid var(--teal); border-radius: 50px;
+      padding: 10px 20px; font-size: 14px; font-weight: 500;
+      color: var(--teal); cursor: pointer; background: white;
+      transition: background 0.15s, color 0.15s; align-self: flex-start; min-width: 200px;
+    }
+    .pill:hover { background: #f0faf8; }
+    .pill.selected { background: var(--teal); color: white; }
+
+    /* Matrix (Financial Joy Q2) */
+    .matrix { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .matrix thead th { font-size: 13px; font-weight: 600; color: var(--teal); padding: 0 0 12px; text-align: center; }
+    .matrix thead th:first-child { text-align: left; }
+    .matrix tbody tr { margin-bottom: 8px; }
+    .matrix tbody td { padding: 6px 4px; }
+    .matrix-row { display: flex; align-items: center; border-radius: 50px; padding: 10px 16px; background: #f0faf8; margin-bottom: 8px; gap: 0; }
+    .matrix-label { flex: 1; font-size: 14px; font-weight: 500; color: var(--teal); }
+    .matrix-radios { display: flex; gap: 48px; }
+    .matrix-radio { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--teal); background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s; }
+    .matrix-radio.selected { background: var(--purple); border-color: var(--purple); }
+    .matrix-radio.selected::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: white; }
+    .matrix-header { display: flex; align-items: center; padding: 0 16px 8px; gap: 0; }
+    .matrix-header-spacer { flex: 1; }
+    .matrix-header-labels { display: flex; gap: 48px; }
+    .matrix-header-label { width: 22px; text-align: center; font-size: 12px; font-weight: 600; color: var(--teal); }
+    .clear-all { font-size: 13px; color: var(--teal); text-decoration: underline; cursor: pointer; display: inline-block; margin-top: 4px; }
+
+    /* Scale (Confidence style) */
+    .scale-wrap { margin-bottom: 24px; }
+    .scale-buttons { display: flex; gap: 12px; margin-bottom: 10px; }
+    .scale-btn {
+      width: 60px; height: 60px; border-radius: 50%; border: 1.5px solid var(--teal);
+      background: white; font-size: 18px; font-weight: 600; color: var(--teal);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .scale-btn:hover { background: #f0faf8; }
+    .scale-btn.selected { background: var(--teal); color: white; border-color: var(--teal); }
+    .scale-labels { display: flex; justify-content: space-between; font-size: 13px; color: var(--teal); padding: 0 4px; }
+
+    /* OK button */
+    .ok-btn { background: var(--purple); color: white; border: none; border-radius: 50px; padding: 11px 28px; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.15s; margin-top: 4px; }
+    .ok-btn:hover { background: var(--purple-mid); }
+
+    /* Combined up/down pill arrows (bottom right of right panel) */
+    .nav-pill {
+      position: absolute; bottom: 24px; right: 24px;
+      display: flex; background: var(--purple); border-radius: 50px;
+      overflow: hidden; z-index: 10;
+    }
+    .nav-pill-btn {
+      width: 46px; height: 46px; background: none; border: none; color: white;
+      font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .nav-pill-btn:hover { background: rgba(255,255,255,0.15); }
+    .nav-pill-btn:disabled { opacity: 0.35; cursor: default; }
+    .nav-pill-divider { width: 1px; background: rgba(255,255,255,0.25); margin: 10px 0; }
+
+    /* ── Save Progress screen ── */
+    .save-body { flex: 1; display: none; overflow-y: auto; justify-content: center; padding: 44px 24px; }
+    .save-body.active { display: flex; }
+    .save-inner { width: 100%; max-width: 860px; display: grid; grid-template-columns: 1fr 1fr; gap: 52px; align-items: start; }
+
+    .save-eyebrow { font-size: 12px; font-weight: 600; color: var(--teal); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
+    .save-h2 { font-size: 26px; font-weight: 700; color: var(--purple); line-height: 1.3; margin-bottom: 10px; }
+    .save-h2 span { color: var(--purple-mid); }
+    .save-lead { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 28px; }
+    .adv-list-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 10px; }
+    .adv-list { display: flex; flex-direction: column; gap: 8px; }
+    .adv-row { display: flex; align-items: center; gap: 12px; border-radius: 10px; padding: 11px 14px; border: 1.5px solid var(--border); background: white; }
+    .adv-row.will-save { border-color: var(--teal); background: #f0faf8; }
+    .adv-row.in-progress { border-color: #c8b8e0; }
+    .adv-row.locked { opacity: 0.32; }
+    .adv-dot2 { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; background: var(--border); color: var(--muted); }
+    .adv-row.will-save .adv-dot2 { background: var(--teal); color: white; }
+    .adv-row.in-progress .adv-dot2 { background: var(--purple-light); color: var(--purple-mid); }
+    .adv-name { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+    .adv-row.will-save .adv-name { color: var(--teal); }
+    .adv-badge { font-size: 10px; font-weight: 700; color: var(--teal); background: #d0f4ee; border-radius: 20px; padding: 2px 9px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .adv-badge-prog { font-size: 10px; font-weight: 600; color: var(--purple-mid); background: var(--purple-light); border-radius: 20px; padding: 2px 9px; }
+
+    /* form */
+    .account-form { background: white; border: 1.5px solid var(--border); border-radius: 18px; padding: 32px; box-shadow: 0 4px 28px rgba(0,0,0,0.07); }
+    .form-logo { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 18px; }
+    .form-logo svg { width: 24px; height: 24px; }
+    .form-logo-text { font-size: 17px; font-weight: 700; color: var(--purple); }
+    .sso-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; border: 1.5px solid var(--border); border-radius: 10px; padding: 13px; font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer; background: white; color: var(--text); margin-bottom: 16px; transition: border-color 0.15s, background 0.15s; }
+    .sso-btn:hover { border-color: #aaa; background: #fafafa; }
+    .sso-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .divider { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; color: var(--muted); font-size: 13px; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .field input { width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s; color: var(--text); }
+    .field input:focus { border-color: var(--purple-mid); }
+    .field input::placeholder { color: #b0b0b0; }
+    .save-cta { width: 100%; background: var(--purple); color: white; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; margin-top: 4px; transition: background 0.15s; }
+    .save-cta:hover { background: var(--purple-mid); }
+    .form-note { text-align: center; font-size: 12px; color: var(--muted); margin-top: 14px; }
+    .form-note a { color: var(--purple-mid); text-decoration: none; }
+    .success-state { display: none; text-align: center; }
+    .success-state.show { display: block; }
+    .success-icon { font-size: 48px; margin-bottom: 14px; }
+    .success-state h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .success-state p { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 22px; }
+    .success-cta { width: 100%; background: var(--teal); color: white; border: none; border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; }
+
+    /* ── Footer ── */
+    .footer { background: white; border-top: 1.5px solid var(--border); padding: 10px 24px; display: flex; align-items: center; justify-content: flex-end; gap: 14px; flex-shrink: 0; min-height: 56px; }
+    .save-hint { font-size: 12px; color: var(--muted); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .save-hint.visible { opacity: 1; }
+    .footer-save-btn { background: white; color: var(--purple); border: 2px solid var(--purple); border-radius: 10px; padding: 9px 24px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+    .footer-save-btn:hover:not(.disabled) { background: var(--purple-light); }
+    .footer-save-btn.disabled { color: #bbb; border-color: #ddd; cursor: not-allowed; }
+
+    /* ── Demo bar ── */
+    .demo-bar { position: fixed; top: 0; left: 0; right: 0; background: rgba(36,4,70,0.93); backdrop-filter: blur(6px); padding: 6px 16px; display: flex; align-items: center; gap: 7px; z-index: 9999; font-family: 'Poppins', sans-serif; flex-wrap: wrap; }
+    .dl { color: rgba(255,255,255,0.38); font-size: 11px; font-weight: 700; letter-spacing: 0.4px; }
+    .ds { color: rgba(255,255,255,0.18); margin: 0 2px; }
+    .dbtn { background: rgba(255,255,255,0.1); color: white; border: none; border-radius: 5px; padding: 4px 10px; font-size: 11px; font-weight: 600; font-family: inherit; cursor: pointer; }
+    .dbtn:hover { background: rgba(255,255,255,0.2); }
+    .dbtn.g { background: rgba(61,189,170,0.3); }
+    .dbtn.g:hover { background: rgba(61,189,170,0.5); }
+    .dbtn.on { outline: 1.5px solid rgba(255,255,255,0.5); }
+  </style>
+</head>
+<body>
+
+<div class="demo-bar">
+  <span class="dl">DEMO</span><span class="ds">|</span>
+  <span class="dl" style="opacity:.25">Adv 1:</span>
+  <button class="dbtn on" id="d1q1" onclick="go('a1q1')">Q1</button>
+  <button class="dbtn" id="d1q2" onclick="go('a1q2')">Q2</button>
+  <button class="dbtn" id="d1q3" onclick="go('a1q3')">Q3</button>
+  <button class="dbtn g" id="d1done" onclick="completeAdv(1)">✓ Complete Financial Joy</button>
+  <span class="ds">|</span>
+  <span class="dl" style="opacity:.25">Adv 2:</span>
+  <button class="dbtn" id="d2q1" onclick="go('a2q1')">Q1</button>
+  <button class="dbtn" id="d2q2" onclick="go('a2q2')">Q2</button>
+  <button class="dbtn" id="d2q3" onclick="go('a2q3')">Q3</button>
+  <button class="dbtn g" id="d2done" onclick="completeAdv(2)">✓ Complete Confidence</button>
+  <span class="ds">|</span>
+  <button class="dbtn" onclick="go('save')">Save Screen</button>
+  <button class="dbtn" onclick="resetDemo()" style="opacity:.45">↺ Reset</button>
+</div>
+
+<div class="shell" style="padding-top: 34px;">
+
+  <div class="header">
+    <div class="header-title" id="headerTitle">Financial Joy</div>
+    <button class="header-x" onclick="resetDemo()">×</button>
+  </div>
+
+  <div class="adv-bar">
+    <div class="adv-tab active" id="tab1"><div class="adv-dot" id="dot1">1</div>Financial Joy</div>
+    <div class="adv-tab" id="tab2"><div class="adv-dot" id="dot2">2</div>Confidence</div>
+    <div class="adv-tab" id="tab3"><div class="adv-dot" id="dot3">3</div>Outlook</div>
+    <div class="adv-tab" id="tab4"><div class="adv-dot" id="dot4">4</div>Future You</div>
+    <div class="adv-tab" id="tab5"><div class="adv-dot" id="dot5">5</div>Goals</div>
+  </div>
+
+  <!-- ══════════ ADVENTURE 1: Financial Joy ══════════ -->
+  <div class="adv-body active" id="a1q1">
+    <div class="adv-left">
+      <div class="adv-logo">
+        <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" stroke="#240446" stroke-width="2.5"/><circle cx="16" cy="16" r="7" stroke="#240446" stroke-width="2.5"/><circle cx="16" cy="16" r="2" fill="#240446"/></svg>
+        <span class="adv-logo-text">knomee</span>
+      </div>
+      <div class="q-title">I want money to help me with...*</div>
+      <div class="q-sub">Choose what feels most relevant today.</div>
+      <div class="q-constraint">Make between 1 and 3 choices</div>
+      <div class="pill-choices">
+        <div class="pill" onclick="togglePill(this)">Enjoying the moment</div>
+        <div class="pill" onclick="togglePill(this)">Comfort</div>
+        <div class="pill" onclick="togglePill(this)">Security</div>
+        <div class="pill" onclick="togglePill(this)">Philanthropy and giving</div>
+        <div class="pill" onclick="togglePill(this)">Supporting my family</div>
+        <div class="pill" onclick="togglePill(this)">Choice/Freedom</div>
+        <div class="pill" onclick="togglePill(this)">Simplicity</div>
+        <div class="pill" onclick="togglePill(this)">Status</div>
+      </div>
+    </div>
+    <div class="adv-right">
+      <div class="adv-right-circle" style="background: var(--teal-bg);"></div>
+      <!-- B&W lifestyle photo placeholder - golfer -->
+      <svg class="adv-right-photo" viewBox="0 0 500 600" style="mix-blend-mode:normal; opacity:0.18;">
+        <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-size="80" font-family="sans-serif">⛳</text>
+      </svg>
+      <div style="position:absolute;bottom:60px;right:80px;font-size:120px;filter:grayscale(1);opacity:0.25;pointer-events:none;">🏌️</div>
+      <div class="nav-pill">
+        <button class="nav-pill-btn" disabled>▲</button>
+        <div class="nav-pill-divider"></div>
+        <button class="nav-pill-btn" onclick="go('a1q2')">▼</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="adv-body" id="a1q2">
+    <div class="adv-left">
+      <div class="adv-logo">
+        <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" stroke="#240446" stroke-width="2.5"/><circle cx="16" cy="16" r="7" stroke="#240446" stroke-width="2.5"/><circle cx="16" cy="16" r="2" fill="#240446"/></svg>
+        <span class="adv-logo-text">knomee</span>
+      </div>
+      <div class="q-title">Right now, how would you like to direct attention to these areas...</div>
+      <div style="height:20px;"></div>
+      <div class="matrix-header">
+        <div class="matrix-header-spacer"></div>
+        <div class="matrix-header-labels">
+          <div class="matrix-header-label">+ More</div>
+          <div class="matrix-header-label">= Same</div>
+          <div class="matrix-header-label">− Less</div>
+        </div>
+      </div>
+      <div id="matrixRows">
+        <!-- rendered by JS -->
+      </div>
+      <span class="clear-all" onclick="clearMatrix()">Clear all</span>
+    </div>
+    <div class="adv-right">
+      <div class="adv-right-circle" style="background: var(--teal-bg);"></div>
+      <div style="position:absolute;bottom:60px;right:60px;font-size:120px;filter:grayscale(1);opacity:0.2;pointer-events:none;">🏃</div>
+      <div class="nav-pill">
+        <button class="nav-pill-btn" onclick="go('a1q1')">▲</button>
+        <div class="nav-pill-divider"></div>
+        <button class="nav-pill-btn" onclick="go('a1q3')">▼</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="adv-body" id="a1q3">
+    <div class="adv-left">
+      <div class="adv-logo">
+        <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" stroke="#240446" stroke-width="2.5"/><circle cx="16" cy="16" r="7" stroke="#240446" stroke-width="2.5"/><circle cx="16" cy="16" r="2" fill="#240446"/></svg>
+        <span class="adv-logo-text">knomee</span>
+      </div>
+      <div class="q-title">Where is <span style="color:var(--purple-mid)">Future You?</span>*</div>
+      <div class="q-sub">Choose what feels most relevant today.</div>
+      <div class="q-constraint">Choose as many as you like</div>
+      <div class="pill-choices">
+        <div class="pill" onclick="togglePill(this)">At the beach</div>
+        <div class="pill" onclick="togglePill(this)">In the mountains</div>
+        <div class="pill" onclick="togglePill(this)">In a big city</div>
+        <div class="pill" onclick="togglePill(this)">In a suburb</div>
+        <div class="pill" onclick="togglePill(this)">In the country</div>
+        <div class="pill" onclick="togglePill(this)">Abroad</div>
+        <div class="pill" onclick="togglePill(this)">Other</div>
+      </div>
+    </div>
+    <div class="adv-right">
+      <div class="adv-right-circle" style="background: var(--teal-bg);"></div>
+      <div style="position:absolute;bottom:60px;right:60px;font-size:120px;filter:grayscale(1);opacity:0.2;pointer-events:none;">🌅</div>
+      <div class="nav-pill">
+        <button class="nav-pill-btn" onclick="go('a1q2')">▲</button>
+        <div class="nav-pill-divider"></div>
+        <button class="nav-pill-btn" disabled>▼</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ ADVENTURE 2: Confidence ══════════ -->
+  <div class="adv-body" id="a2q1">
+    <div class="adv-left">
+      <div class="adv-logo">
+        <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" stroke="#240446" stroke-width="2.5"/><circle cx="16" cy="16" r="7" stroke="#240446" stroke-width="2.5"/><circle cx="16" cy="16" r="2" fill="#240446"/></svg>
+        <span class="adv-logo-text">knomee</span>
+      </div>
+      <div class="q-num"><span>1 →</span></div>
+      <div class="q-title">I'm confident in my current financial condition to live the life I want.*</div>
+      <div style="height:24px;"></div>
+      <div class="scale-wrap">
+        <div class="scale-buttons" id="scale-a2q1">
+          <button class="scale-btn" onclick="selectScale('scale-a2q1',this)">1</button>
+          <button class="scale-btn" onclick="selectScale('scale-a2q1',this)">2</button>
+          <button class="scale-btn selected" onclick="selectScale('scale-a2q1',this)">3</button>
+          <button class="scale-btn" onclick="selectScale('scale-a2q1',this)">4</button>
+          <button class="scale-btn" onclick="selectScale('scale-a2q1',this)">5</button>
+        </div>
+        <div class="scale-labels"><span>Not Confident</span><span>Very Confident</span></div>
+      </div>
+      <button class="ok-btn" onclick="go('a2q2')">OK</button>
+    </div>
+    <div class="adv-right">
+      <div class="adv-right-circle" style="background: var(--lavender-bg);"></div>
+      <div style="position:absolute;bottom:60px;right:60px;font-size:120px;filter:grayscale(1);opacity:0.2;pointer-events:none;">👩‍💼</div>
+      <div class="nav-pill">
+        <button class="nav-pill-btn" disabled>▲</button>
+        <div class="nav-pill-divider"></div>
+        <button class="nav-pill-btn" onclick="go('a2q2')">▼</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="adv-body" id="a2q2">
+    <div class="adv-left">
+      <div class="adv-logo">
+        <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" stroke="#240446" stroke-width="2.5"/><circle cx="16" cy="16" r="7" stroke="#240446" stroke-width="2.5"/><circle cx="16" cy="16" r="2" fill="#240446"/></svg>
+        <span class="adv-logo-text">knomee</span>
+      </div>
+      <div class="q-num"><span>2 →</span></div>
+      <div class="q-title">I know what is most important in my life right now.*</div>
+      <div style="height:24px;"></div>
+      <div class="scale-wrap">
+        <div class="scale-buttons" id="scale-a2q2">
+          <button class="scale-btn" onclick="selectScale('scale-a2q2',this)">1</button>
+          <button class="scale-btn" onclick="selectScale('scale-a2q2',this)">2</button>
+          <button class="scale-btn selected" onclick="selectScale('scale-a2q2',this)">3</button>
+          <button class="scale-btn" onclick="selectScale('scale-a2q2',this)">4</button>
+          <button class="scale-btn" onclick="selectScale('scale-a2q2',this)">5</button>
+        </div>
+        <div class="scale-labels"><span>Strongly Disagree</span><span>Strongly Agree</span></div>
+      </div>
+      <button class="ok-btn" onclick="go('a2q3')">OK</button>
+    </div>
+    <div class="adv-right">
+      <div class="adv-right-circle" style="background: var(--lavender-bg);"></div>
+      <div style="position:absolute;bottom:60px;right:60px;font-size:120px;filter:grayscale(1);opacity:0.2;pointer-events:none;">🧑‍🤝‍🧑</div>
+      <div class="nav-pill">
+        <button class="nav-pill-btn" onclick="go('a2q1')">▲</button>
+        <div class="nav-pill-divider"></div>
+        <button class="nav-pill-btn" onclick="go('a2q3')">▼</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="adv-body" id="a2q3">
+    <div class="adv-left">
+      <div class="adv-logo">
+        <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" stroke="#240446" stroke-width="2.5"/><circle cx="16" cy="16" r="7" stroke="#240446" stroke-width="2.5"/><circle cx="16" cy="16" r="2" fill="#240446"/></svg>
+        <span class="adv-logo-text">knomee</span>
+      </div>
+      <div class="q-num"><span>3 →</span></div>
+      <div class="q-title">I spend money on experiences, causes, services, and items that bring me joy.*</div>
+      <div style="height:24px;"></div>
+      <div class="scale-wrap">
+        <div class="scale-buttons" id="scale-a2q3">
+          <button class="scale-btn" onclick="selectScale('scale-a2q3',this)">1</button>
+          <button class="scale-btn" onclick="selectScale('scale-a2q3',this)">2</button>
+          <button class="scale-btn selected" onclick="selectScale('scale-a2q3',this)">3</button>
+          <button class="scale-btn" onclick="selectScale('scale-a2q3',this)">4</button>
+          <button class="scale-btn" onclick="selectScale('scale-a2q3',this)">5</button>
+        </div>
+        <div class="scale-labels"><span>Never</span><span>Often</span></div>
+      </div>
+      <button class="ok-btn" onclick="go('a2q3')">OK</button>
+    </div>
+    <div class="adv-right">
+      <div class="adv-right-circle" style="background: var(--lavender-bg);"></div>
+      <div style="position:absolute;bottom:60px;right:60px;font-size:120px;filter:grayscale(1);opacity:0.2;pointer-events:none;">🐕</div>
+      <div class="nav-pill">
+        <button class="nav-pill-btn" onclick="go('a2q2')">▲</button>
+        <div class="nav-pill-divider"></div>
+        <button class="nav-pill-btn" disabled>▼</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ SAVE SCREEN ══════════ -->
+  <div class="save-body" id="save">
+    <div class="save-inner">
+      <div>
+        <div class="save-eyebrow" id="saveEyebrow">1 adventure complete</div>
+        <div class="save-h2">Don't lose what<br>you just <span>discovered.</span></div>
+        <div class="save-lead">Create a free account to unlock your insights, share them with your advisor, and pick up where you left off — any time.</div>
+        <div class="adv-list-label">What will be saved</div>
+        <div class="adv-list" id="advList"></div>
+      </div>
+      <div class="account-form">
+        <div id="saveForm">
+          <div class="form-logo">
+            <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" stroke="#7639A1" stroke-width="2.5"/><circle cx="16" cy="16" r="7" stroke="#7639A1" stroke-width="2.5"/><circle cx="16" cy="16" r="2" fill="#7639A1"/></svg>
+            <span class="form-logo-text">knomee</span>
+          </div>
+          <button class="sso-btn" onclick="showSuccess()">
+            <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            Continue with Google
+          </button>
+          <div class="divider">or</div>
+          <div class="fields-row">
+            <div class="field"><label>First name</label><input type="text" placeholder="First name" id="iFirst"></div>
+            <div class="field"><label>Last name</label><input type="text" placeholder="Last name" id="iLast"></div>
+          </div>
+          <div class="field"><label>Email address</label><input type="email" placeholder="Enter your email address" id="iEmail"></div>
+          <button class="save-cta" id="saveCtaBtn" onclick="handleSave()">Save my progress →</button>
+          <div class="form-note">Already have an account? <a href="#" onclick="return false;">Sign in</a></div>
+        </div>
+        <div class="success-state" id="successState">
+          <div class="success-icon">🎉</div>
+          <h3>Progress saved!</h3>
+          <p>We've sent a link to your email.<br>Your results are ready to view.</p>
+          <button class="success-cta">View My Results</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span class="save-hint" id="saveHint">Finish <strong id="hintName">Financial Joy</strong> to save your progress</span>
+    <button class="footer-save-btn disabled" id="footerSaveBtn" onclick="onSaveClick()">Save Progress</button>
+  </div>
+
+</div>
+
+<script>
+  const ADVENTURES = [
+    { name: 'Financial Joy', done: false },
+    { name: 'Confidence',    done: false },
+    { name: 'Outlook',       done: false },
+    { name: 'Future You',    done: false },
+    { name: 'Goals',         done: false },
+  ];
+
+  const ADV_SCREENS = {
+    a1q1: 1, a1q2: 1, a1q3: 1,
+    a2q1: 2, a2q2: 2, a2q3: 2,
+  };
+
+  const MATRIX_ROWS = ['Work & Career','Financial Planning & Management','Health & Wellness','Family & Relationships','Hobbies & Interests','Travel & Adventure','Home Life'];
+  // matrix state: 0=none,1=more,2=same,3=less
+  const matrixState = MATRIX_ROWS.map(() => 0);
+
+  // Build matrix
+  function buildMatrix() {
+    const container = document.getElementById('matrixRows');
+    container.innerHTML = MATRIX_ROWS.map((label, i) => `
+      <div class="matrix-row">
+        <div class="matrix-label">${label}</div>
+        <div class="matrix-radios">
+          <div class="matrix-radio${matrixState[i]===1?' selected':''}" onclick="setMatrix(${i},1)"></div>
+          <div class="matrix-radio${matrixState[i]===2?' selected':''}" onclick="setMatrix(${i},2)"></div>
+          <div class="matrix-radio${matrixState[i]===3?' selected':''}" onclick="setMatrix(${i},3)"></div>
+        </div>
+      </div>`).join('');
+  }
+  function setMatrix(row, val) {
+    matrixState[row] = matrixState[row] === val ? 0 : val;
+    buildMatrix();
+  }
+  function clearMatrix() { matrixState.fill(0); buildMatrix(); }
+  buildMatrix();
+
+  let currentScreen = 'a1q1';
+  let currentAdv = 1;
+
+  function go(screenId) {
+    // Hide all
+    document.querySelectorAll('.adv-body, .save-body').forEach(el => el.classList.remove('active'));
+    currentScreen = screenId;
+
+    if (screenId === 'save') {
+      document.getElementById('save').classList.add('active');
+      document.getElementById('headerTitle').textContent = 'Save Progress';
+      currentAdv = null;
+      renderSaveScreen();
+    } else {
+      document.getElementById(screenId).classList.add('active');
+      const advNum = ADV_SCREENS[screenId] || 1;
+      currentAdv = advNum;
+      document.getElementById('headerTitle').textContent = ADVENTURES[advNum - 1].name;
+      updateAdvTabs(advNum);
+    }
+    updateFooter();
+    updateDemoBar(screenId);
+  }
+
+  function updateAdvTabs(active) {
+    for (let i = 1; i <= 5; i++) {
+      const tab = document.getElementById('tab' + i);
+      const dot = document.getElementById('dot' + i);
+      tab.classList.remove('active', 'done');
+      if (ADVENTURES[i-1].done) {
+        tab.classList.add('done');
+        dot.textContent = '✓';
+      } else if (i === active) {
+        tab.classList.add('active');
+        dot.textContent = i;
+      } else {
+        dot.textContent = i;
+      }
+    }
+  }
+
+  function completeAdv(n) {
+    ADVENTURES[n - 1].done = true;
+    updateAdvTabs(n);
+    go('save');
+  }
+
+  function updateFooter() {
+    const btn = document.getElementById('footerSaveBtn');
+    const hint = document.getElementById('saveHint');
+    const anyDone = ADVENTURES.some(a => a.done);
+
+    if (currentAdv === null) {
+      btn.classList.remove('disabled');
+      hint.classList.remove('visible');
+      return;
+    }
+    if (anyDone) {
+      btn.classList.remove('disabled');
+      hint.classList.remove('visible');
+    } else {
+      btn.classList.add('disabled');
+      hint.classList.add('visible');
+      document.getElementById('hintName').textContent = ADVENTURES[currentAdv - 1].name;
+    }
+  }
+
+  function onSaveClick() {
+    if (!document.getElementById('footerSaveBtn').classList.contains('disabled')) go('save');
+  }
+
+  function renderSaveScreen() {
+    const doneCount = ADVENTURES.filter(a => a.done).length;
+    document.getElementById('saveEyebrow').textContent = doneCount + ' adventure' + (doneCount !== 1 ? 's' : '') + ' complete';
+
+    const list = document.getElementById('advList');
+    list.innerHTML = ADVENTURES.map((adv, i) => {
+      if (adv.done) {
+        return `<div class="adv-row will-save"><div class="adv-dot2">✓</div><div class="adv-name">${adv.name}</div><span class="adv-badge">Will be saved</span></div>`;
+      } else if (doneCount > 0 && i < doneCount + 1) {
+        return `<div class="adv-row in-progress"><div class="adv-dot2">${i+1}</div><div class="adv-name">${adv.name}</div><span class="adv-badge-prog">In progress</span></div>`;
+      } else {
+        return `<div class="adv-row locked"><div class="adv-dot2">${i+1}</div><div class="adv-name">${adv.name}</div><span style="color:#ccc;font-size:13px">🔒</span></div>`;
+      }
+    }).join('');
+  }
+
+  function togglePill(el) { el.classList.toggle('selected'); }
+
+  function selectScale(containerId, btn) {
+    document.querySelectorAll('#' + containerId + ' .scale-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  function handleSave() {
+    const first = document.getElementById('iFirst').value.trim();
+    const email = document.getElementById('iEmail').value.trim();
+    if (!first || !email) {
+      const btn = document.getElementById('saveCtaBtn');
+      btn.style.background = '#c0392b';
+      btn.textContent = 'Please enter your name and email';
+      setTimeout(() => { btn.style.background = ''; btn.textContent = 'Save my progress →'; }, 2200);
+      return;
+    }
+    showSuccess();
+  }
+
+  function showSuccess() {
+    document.getElementById('saveForm').style.display = 'none';
+    document.getElementById('successState').classList.add('show');
+  }
+
+  function updateDemoBar(screenId) {
+    ['d1q1','d1q2','d1q3','d1done','d2q1','d2q2','d2q3','d2done'].forEach(id => document.getElementById(id).classList.remove('on'));
+    const map = { a1q1:'d1q1', a1q2:'d1q2', a1q3:'d1q3', a2q1:'d2q1', a2q2:'d2q2', a2q3:'d2q3' };
+    if (map[screenId]) document.getElementById(map[screenId]).classList.add('on');
+    if (ADVENTURES[0].done) document.getElementById('d1done').classList.add('on');
+    if (ADVENTURES[1].done) document.getElementById('d2done').classList.add('on');
+  }
+
+  function resetDemo() {
+    ADVENTURES.forEach(a => a.done = false);
+    matrixState.fill(0); buildMatrix();
+    document.getElementById('saveForm').style.display = '';
+    document.getElementById('successState').classList.remove('show');
+    ['iFirst','iLast','iEmail'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('saveCtaBtn').style.background = '';
+    document.getElementById('saveCtaBtn').textContent = 'Save my progress →';
+    go('a1q1');
+  }
+
+  updateFooter();
+</script>
+</body>
+</html>
