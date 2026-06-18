@@ -227,10 +227,11 @@
     .cs-badge { width: 290px; height: 290px; transform-origin: center center; opacity: 0; }
     .cs-next {
       position: absolute; bottom: 80px;
-      font-size: 15px; color: rgba(255,255,255,0.7);
-      opacity: 0; cursor: pointer;
+      font-size: 14px; font-weight: 600; color: var(--purple);
+      background: var(--teal); border: none; border-radius: 50px;
+      padding: 12px 28px; font-family: inherit; cursor: pointer;
+      opacity: 0;
     }
-    .cs-next strong { color: var(--teal); font-weight: 700; }
     @keyframes csBadgeSpin {
       0%   { transform: scale(0) rotate(-360deg); opacity: 0; }
       55%  { opacity: 1; }
@@ -559,7 +560,7 @@
       <textPath href="#botArc1" startOffset="50%" text-anchor="middle">ADVENTURE COMPLETE</textPath>
     </text>
   </svg>
-  <div class="cs-next">Next up: <strong>Confidence</strong></div>
+  <button class="cs-next">Next up: Confidence</button>
 </div>
 
 <!-- ══════════ COMPLETE SCREEN 2: Confidence ══════════ -->
@@ -598,7 +599,7 @@
       <textPath href="#botArc2" startOffset="50%" text-anchor="middle">ADVENTURE COMPLETE</textPath>
     </text>
   </svg>
-  <div class="cs-next">Next up: <strong>Outlook</strong></div>
+  <button class="cs-next">Next up: Outlook</button>
 </div>
 
 <script>
@@ -650,9 +651,11 @@
     if (screenId === 'save') {
       document.getElementById('save').classList.add('active');
       document.getElementById('headerTitle').textContent = 'Save Progress';
+      document.querySelector('.footer').style.display = 'none';
       currentAdv = null;
       renderSaveScreen();
     } else {
+      document.querySelector('.footer').style.display = '';
       document.getElementById(screenId).classList.add('active');
       const advNum = ADV_SCREENS[screenId] || 1;
       currentAdv = advNum;
