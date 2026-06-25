@@ -662,8 +662,7 @@
       currentAdv = null;
       renderSaveScreen();
     } else {
-      document.querySelector('.footer').style.display = '';
-      document.getElementById(screenId).classList.add('active');
+document.getElementById(screenId).classList.add('active');
       const advNum = ADV_SCREENS[screenId] || 1;
       currentAdv = advNum;
       document.getElementById('headerTitle').textContent = ADVENTURES[advNum - 1].name;
