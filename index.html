@@ -246,6 +246,14 @@
     .complete-screen.playing .cs-logo     { animation: csFadeIn 0.4s ease 0.82s forwards; }
     .complete-screen.playing .cs-progress { animation: csFadeIn 0.4s ease 0.88s forwards; }
     .complete-screen.playing .cs-next     { animation: csFadeIn 0.4s ease 1.0s  forwards; }
+    .complete-screen.playing .cs-save     { animation: csFadeIn 0.4s ease 1.15s forwards; }
+    .cs-save {
+      position: absolute; bottom: 42px;
+      font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.7);
+      background: none; border: none; font-family: inherit; cursor: pointer;
+      text-decoration: underline; opacity: 0;
+    }
+    .cs-save:hover { color: white; }
 
     /* ── Demo bar ── */
     .demo-bar { position: fixed; top: 0; left: 0; right: 0; background: rgba(36,4,70,0.93); backdrop-filter: blur(6px); padding: 6px 16px; display: flex; align-items: center; gap: 7px; z-index: 9999; font-family: 'Poppins', sans-serif; flex-wrap: wrap; }
@@ -528,10 +536,6 @@
     </div>
   </div>
 
-  <div class="footer">
-    <span class="save-hint" id="saveHint">Finish <strong id="hintName">Financial Joy</strong> to save your progress</span>
-    <button class="footer-save-btn disabled" id="footerSaveBtn" onclick="onSaveClick()">Save Progress</button>
-  </div>
 
 </div>
 
@@ -563,6 +567,7 @@
     </text>
   </svg>
   <button class="cs-next">Next up: Confidence</button>
+  <button class="cs-save" onclick="event.stopPropagation(); advanceFromComplete(1, true)">Save my adventure</button>
 </div>
 
 <!-- ══════════ COMPLETE SCREEN 2: Confidence ══════════ -->
@@ -602,6 +607,7 @@
     </text>
   </svg>
   <button class="cs-next">Next up: Outlook</button>
+  <button class="cs-save" onclick="event.stopPropagation(); advanceFromComplete(2, true)">Save my adventure</button>
 </div>
 
 <script>
@@ -653,7 +659,6 @@
     if (screenId === 'save') {
       document.getElementById('save').classList.add('active');
       document.getElementById('headerTitle').textContent = 'Save Progress';
-      document.querySelector('.footer').style.display = 'none';
       currentAdv = null;
       renderSaveScreen();
     } else {
@@ -664,7 +669,7 @@
       document.getElementById('headerTitle').textContent = ADVENTURES[advNum - 1].name;
       updateAdvTabs(advNum);
     }
-    updateFooter();
+
     updateDemoBar(screenId);
   }
 
@@ -688,7 +693,7 @@
   function completeAdv(n) {
     ADVENTURES[n - 1].done = true;
     updateAdvTabs(n);
-    updateFooter();
+
     const cs = document.getElementById('cs' + n);
     cs.classList.remove('playing');
     void cs.offsetWidth; // restart animations
@@ -696,37 +701,14 @@
     updateDemoBar('');
   }
 
-  function advanceFromComplete(n) {
+  function advanceFromComplete(n, goToSave) {
     document.getElementById('cs' + n).classList.remove('visible', 'playing');
-    if (n === 1) go('a2q1');
+    if (goToSave) go('save');
+    else if (n === 1) go('a2q1');
     else go('save');
   }
 
-  function updateFooter() {
-    const btn = document.getElementById('footerSaveBtn');
-    const hint = document.getElementById('saveHint');
-    const anyDone = ADVENTURES.some(a => a.done);
-
-    if (currentAdv === null) {
-      btn.classList.remove('disabled');
-      hint.classList.remove('visible');
-      return;
-    }
-    if (anyDone) {
-      btn.classList.remove('disabled');
-      hint.classList.remove('visible');
-    } else {
-      btn.classList.add('disabled');
-      hint.classList.add('visible');
-      document.getElementById('hintName').textContent = ADVENTURES[currentAdv - 1].name;
-    }
-  }
-
-  function onSaveClick() {
-    if (!document.getElementById('footerSaveBtn').classList.contains('disabled')) go('save');
-  }
-
-  function renderSaveScreen() {
+function renderSaveScreen() {
     const doneCount = ADVENTURES.filter(a => a.done).length;
     document.getElementById('saveEyebrow').textContent = doneCount + ' adventure' + (doneCount !== 1 ? 's' : '') + ' complete';
 
